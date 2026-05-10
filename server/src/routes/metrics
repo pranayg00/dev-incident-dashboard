@@ -1,0 +1,41 @@
+const express = require('express');
+const router = express.Router();
+const pool = require('../config/db');
+
+// Get metrics for a service
+router.get('/:serviceId', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM metrics WHERE service_id = $1
+       ORDER BY checked_at DESC LIMIT 100`,
+      [req.params.serviceId]
+    );
+    res.json({ metrics: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get uptime stats for all services
+router.get('/stats/uptime', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        s.id, s.name,
+        COUNT(m.id) as total_checks,
+        SUM(CASE WHEN m.status = 'UP' THEN 1 ELSE 0 END) as up_count,
+        AVG(m.response_time) as avg_response_time,
+        ROUND(
+          SUM(CASE WHEN m.status = 'UP' THEN 1 ELSE 0 END) * 100.0 / COUNT(m.id), 2
+        ) as uptime_percentage
+      FROM services s
+      LEFT JOIN metrics m ON s.id = m.service_id
+      GROUP BY s.id, s.name
+    `);
+    res.json({ stats: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;
