@@ -8,15 +8,12 @@ import StatusBadge from '../components/StatusBadge';
 import { getIncident, analyzeIncident, resolveIncident } from '../utils/api';
 
 const AIAnalysisPanel = ({ analysis, loading }) => {
-  const [displayed, setDisplayed] = useState('');
   const fullText = analysis ? JSON.stringify(analysis, null, 2) : '';
 
   useEffect(() => {
     if (!fullText) return;
-    setDisplayed('');
     let i = 0;
     const interval = setInterval(() => {
-      setDisplayed(fullText.slice(0, i));
       i += 3;
       if (i > fullText.length) clearInterval(interval);
     }, 20);
